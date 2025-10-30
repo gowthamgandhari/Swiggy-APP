@@ -58,7 +58,7 @@ pipeline {
               expression { currentBuild.resultIsBetterOrEqualTo('SUCCESS') }
             }
             steps {
-                dir('Tf-Scrpt-Ec2-Eks-Swiggy-App/terraform-EKS-code') {
+                dir('Tf-Scrpt-Ec2-Eks-Swiggy-App/terraform-EKS-Code') {
                    sh 'terraform init'
                    sh 'terraform fmt; terraform validate'
                    sh 'terraform apply -auto-approve'
