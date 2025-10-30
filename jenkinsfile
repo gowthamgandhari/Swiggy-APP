@@ -21,7 +21,7 @@ pipeline {
 
         stage('Checkout from Git') {
             steps {
-                git 'https://github.com/gowthamgandhari/Swiggy-APP.git'
+                git branch: 'main', url: 'https://github.com/gowthamgandhari/Swiggy-APP.git'
             }
         }
 
