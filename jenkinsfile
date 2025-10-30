@@ -1,74 +1,137 @@
-pipeline{
+pipeline {
     agent any
-    tools{
-        jdk 'jdk21'
+
+    tools {
+        jdk 'jdk17'
         nodejs 'nodejs23'
     }
+
     environment {
-        SCANNER_HOME=tool 'sonar-scanner'
+        SCANNER_HOME = tool 'sonar-scanner'
+        AWS_ACCESS_KEY_ID = credentials('EKS-Access-key')
+        AWS_SECRET_ACCESS_KEY = credentials('EKS-Secret-key')
+        AWS_DEFAULT_REGION = 'ap-south-1'
+        action = "apply"  // change to 'destroy' when needed
     }
+
     stages {
-        stage('clean workspace'){
-            steps{
-                cleanWs()
+        stage('Clean Workspace') {
+            steps { cleanWs() }
+        }
+
+        stage('Checkout from Git') {
+            steps {
+                git 'https://github.com/gowthamgandhari/Swiggy-APP.git'
             }
         }
-        stage('Checkout from Git'){
-            steps{
-                git 'https://github.com/KastroVKiran/DevOps-Project-Swiggy.git'
-            }
-        }
-        stage("Sonarqube Analysis "){
-            steps{
+
+        stage('SonarQube Analysis') {
+            steps {
                 withSonarQubeEnv('sonar-server') {
-                    sh ''' $SCANNER_HOME/bin/sonar-scanner -Dsonar.projectName=Swiggy \
-                    -Dsonar.projectKey=Swiggy '''
+                    sh '''
+                        $SCANNER_HOME/bin/sonar-scanner \
+                        -Dsonar.projectName=Swiggy \
+                        -Dsonar.projectKey=Swiggy
+                    '''
                 }
             }
         }
-        stage("quality gate"){
-           steps {
+
+        stage('Quality Gate') {
+            steps {
                 script {
-                    waitForQualityGate abortPipeline: false, credentialsId: 'Sonar-token' 
+                    waitForQualityGate abortPipeline: false, credentialsId: 'Sonar-token'
                 }
-            } 
+            }
         }
+
         stage('Install Dependencies') {
+            steps { sh 'npm install' }
+        }
+
+        stage('Terraform EC2 Init/fmt/validate & Apply') {
             steps {
-                sh "npm install"
+                dir('Tf-Scrpt-Ec2-Eks-Swiggy-App/terraform-EC2-code') {
+                    sh 'terraform init'
+                    sh 'terraform fmt; terraform validate'
+                    sh 'terraform apply -auto-approve'
+                }
             }
         }
-        stage('OWASP FS SCAN') {
+
+        stage('Terraform EKS Init/fmt/validate & Apply') {
+           // Run only if EC2 creation succeeded
+           when {
+              expression { currentBuild.resultIsBetterOrEqualTo('SUCCESS') }
+            }
             steps {
-                dependencyCheck additionalArguments: '--scan ./ --disableYarnAudit --disableNodeAudit', odcInstallation: 'DP-Check'
-                dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
+                dir('Tf-Scrpt-Ec2-Eks-Swiggy-App/terraform-EKS-code') {
+                   sh 'terraform init'
+                   sh 'terraform fmt; terraform validate'
+                   sh 'terraform apply -auto-approve'
+                }
             }
         }
-        stage('TRIVY FS SCAN') {
+
+        stage('Manual Approval') {
             steps {
-                sh "trivy fs . > trivyfs.txt"
+                input(message: 'Approve deployment?', ok: 'Proceed')
             }
         }
-        stage("Docker Build & Push"){
-            steps{
-                script{
-                   withDockerRegistry(credentialsId: 'dockerhub-creds', toolName: 'docker'){   
-                       sh "docker build -t swiggy ."
-                       sh "docker tag swiggy kastrov/swiggy:latest "
-                       sh "docker push kastrov/swiggy:latest "
+
+        stage('Terraform Apply/Destroy') {
+            steps {
+                script {
+                   dir('Tf-Scrpt-Ec2-Eks-Swiggy-App/terraform-EC2-code') {
+                      sh "terraform ${action} --auto-approve"
+                    }
+                   dir('Tf-Scrpt-Ec2-Eks-Swiggy-App/terraform-EKS-code') {
+                      sh "terraform ${action} --auto-approve"
                     }
                 }
             }
         }
-        stage("TRIVY"){
-            steps{
-                sh "trivy image kastrov/swiggy:latest > trivy.txt" 
+        
+        stage('Trivy FS Scan') {
+            steps {
+                sh 'trivy fs . > trivyfs.txt'
             }
         }
-        stage('Deploy to container'){
-            steps{
-                sh 'docker run -d --name swiggy -p 3000:3000 kastrov/swiggy:latest'
+
+        stage('Docker Build & Push') {
+            steps {
+                script {
+                    withDockerRegistry(credentialsId: 'dockerhub-creds') {
+                        sh '''
+                            docker build -t swiggy .
+                            docker tag swiggy gowthamcloud268/swiggy:latest
+                            docker push gowthamcloud268/swiggy:latest
+                        '''
+                    }
+                }
             }
         }
-    }
-}
+
+        stage('Trivy Image Scan') {
+            steps {
+                sh 'trivy image gowthamcloud268/swiggy:latest > trivy.txt'
+            }
+        }
+
+        stage('Deploy to EKS') {
+            steps {
+                dir('k8s') {
+                 withAWS(credentials: 'EKS-Access-key', region: 'ap-south-1') {
+                    sh '''
+                    aws eks update-kubeconfig --region ap-south-1 --name your-eks-cluster-name
+                    kubectl apply -f deployment.yml
+                    kubectl apply -f service.yml
+                    '''
+                 }
+                }
+            }
+        }
+    } 
+}       
+
+
