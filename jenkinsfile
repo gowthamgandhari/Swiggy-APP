@@ -20,17 +20,17 @@ pipeline {
                 git branch: 'main', url: 'https://github.com/gowthamgandhari/Swiggy-APP.git'
             }
         }
-
+        
         stage('SonarQube Analysis') {
             steps {
                 withSonarQubeEnv('sonar-server') {
                     sh '''
                         $SCANNER_HOME/bin/sonar-scanner \
+                        -Dsonar.projectKey=Swiggy \
+                        -Dsonar.projectName=Swiggy \
                         -Dsonar.sources=. \
                         -Dsonar.sourceEncoding=UTF-8 \
                         -Dsonar.exclusions=node_modules/**,**/*.spec.js,**/test/**
-                        -Dsonar.projectName=Swiggy \
-                        -Dsonar.projectKey=Swiggy
                     '''
                 }
             }
