@@ -7,7 +7,7 @@ resource "aws_instance" "web" {
   user_data              = templatefile("./resource.sh", {})
 
   tags = {
-    Name = "Jenkins-Sonar-Eks"
+    Name = "Jenkins-VM-Via-tf"
   }
   root_block_device {
     volume_size = 40
