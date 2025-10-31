@@ -11,14 +11,10 @@ pipeline {
         AWS_ACCESS_KEY_ID = credentials('EKS-Access-key')
         AWS_SECRET_ACCESS_KEY = credentials('EKS-Secret-key')
         AWS_DEFAULT_REGION = 'ap-south-1'
-        action = "destroy"  // change to 'apply' when needed
+        action = "apply"  // change to 'destroy' when needed
     }
 
     stages {
-        stage('Clean Workspace') {
-            steps { cleanWs() }
-        }
-
         stage('Checkout from Git') {
             steps {
                 git branch: 'main', url: 'https://github.com/gowthamgandhari/Swiggy-APP.git'
@@ -42,20 +38,26 @@ pipeline {
             steps { sh 'npm install' }
         }
 
-        stage('Terraform EC2 Destroy') {
+        stage('Terraform EC2 Init/fmt/validate & Apply') {
             steps {
                 dir('Tf-Scrpt-Ec2-Eks-Swiggy-App/terraform-EC2-code') {
                     sh 'terraform init'
-                    sh 'terraform destroy -auto-approve'
+                    sh 'terraform fmt; terraform validate'
+                    sh 'terraform apply -auto-approve'
                 }
             }
         }
 
-        stage('Terraform EKS Destroy') {
+        stage('Terraform EKS Init/fmt/validate & Apply') {
+           // Run only if EC2 creation succeeded
+           when {
+              expression { currentBuild.resultIsBetterOrEqualTo('SUCCESS') }
+            }
             steps {
                 dir('Tf-Scrpt-Ec2-Eks-Swiggy-App/terraform-EKS-Code') {
-                    sh 'terraform init'
-                    sh 'terraform destroy -auto-approve'
+                   sh 'terraform init'
+                   sh 'terraform fmt; terraform validate'
+                   sh 'terraform apply -auto-approve'
                 }
             }
         }
@@ -65,29 +67,14 @@ pipeline {
                 input(message: 'Approve deployment?', ok: 'Proceed')
             }
         }
-
-        stage('Terraform Apply/Destroy') {
-            steps {
-                script {
-                   dir('Tf-Scrpt-Ec2-Eks-Swiggy-App/terraform-EC2-code') {
-                      sh "terraform ${action} --auto-approve"
-                    }
-                   dir('Tf-Scrpt-Ec2-Eks-Swiggy-App/terraform-EKS-code') {
-                      sh "terraform ${action} --auto-approve"
-                    }
-                }
-            }
-        }
         
         stage('Trivy FS Scan') {
-            when { expression { action == 'apply' } }
             steps {
                 sh 'trivy fs . > trivyfs.txt'
             }
         }
 
         stage('Docker Build & Push') {
-            when { expression { action == 'apply' } }
             steps {
                 script {
                     withDockerRegistry(credentialsId: 'dockerhub-creds') {
@@ -102,19 +89,17 @@ pipeline {
         }
 
         stage('Trivy Image Scan') {
-            when { expression { action == 'apply' } }
             steps {
                 sh 'trivy image gowthamcloud268/swiggy:latest > trivy.txt'
             }
         }
 
         stage('Deploy to EKS') {
-            when { expression { action == 'apply' } }
             steps {
                 dir('k8s') {
                  withAWS(credentials: 'EKS-Access-key', region: 'ap-south-1') {
                     sh '''
-                    aws eks update-kubeconfig --region ap-south-1 --name your-eks-cluster-name
+                    aws eks update-kubeconfig --region ap-south-1 --name Swiggy-cluster
                     kubectl apply -f deployment.yml
                     kubectl apply -f service.yml
                     '''
