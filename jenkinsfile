@@ -26,6 +26,9 @@ pipeline {
                 withSonarQubeEnv('sonar-server') {
                     sh '''
                         $SCANNER_HOME/bin/sonar-scanner \
+                        -Dsonar.sources=. \
+                        -Dsonar.sourceEncoding=UTF-8 \
+                        -Dsonar.exclusions=node_modules/**,**/*.spec.js,**/test/**
                         -Dsonar.projectName=Swiggy \
                         -Dsonar.projectKey=Swiggy
                     '''
@@ -35,7 +38,7 @@ pipeline {
 
 
         stage('Install Dependencies') {
-            steps { sh 'npm install' }
+            steps {  sh 'npm ci' }
         }
 
         stage('Terraform EC2 Init/fmt/validate & Apply') {
@@ -109,5 +112,4 @@ pipeline {
         }
     } 
 }       
-
 
