@@ -11,7 +11,7 @@ pipeline {
         AWS_ACCESS_KEY_ID = credentials('EKS-Access-key')
         AWS_SECRET_ACCESS_KEY = credentials('EKS-Secret-key')
         AWS_DEFAULT_REGION = 'ap-south-1'
-        action = "apply"  // change to 'destroy' when needed
+        action = "destroy"  // change to 'apply' when needed
     }
 
     stages {
@@ -42,26 +42,20 @@ pipeline {
             steps { sh 'npm install' }
         }
 
-        stage('Terraform EC2 Init/fmt/validate & Apply') {
+        stage('Terraform EC2 Destroy') {
             steps {
                 dir('Tf-Scrpt-Ec2-Eks-Swiggy-App/terraform-EC2-code') {
                     sh 'terraform init'
-                    sh 'terraform fmt; terraform validate'
-                    sh 'terraform apply -auto-approve'
+                    sh 'terraform destroy -auto-approve'
                 }
             }
         }
 
-        stage('Terraform EKS Init/fmt/validate & Apply') {
-           // Run only if EC2 creation succeeded
-           when {
-              expression { currentBuild.resultIsBetterOrEqualTo('SUCCESS') }
-            }
+        stage('Terraform EKS Destroy') {
             steps {
                 dir('Tf-Scrpt-Ec2-Eks-Swiggy-App/terraform-EKS-Code') {
-                   sh 'terraform init'
-                   sh 'terraform fmt; terraform validate'
-                   sh 'terraform apply -auto-approve'
+                    sh 'terraform init'
+                    sh 'terraform destroy -auto-approve'
                 }
             }
         }
