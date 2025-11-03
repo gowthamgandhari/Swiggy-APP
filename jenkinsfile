@@ -28,9 +28,6 @@ pipeline {
                         $SCANNER_HOME/bin/sonar-scanner \
                         -Dsonar.projectKey=Swiggy \
                         -Dsonar.projectName=Swiggy \
-                        -Dsonar.sources=. \
-                        -Dsonar.sourceEncoding=UTF-8 \
-                        -Dsonar.exclusions=node_modules/**,**/*.spec.js,**/test/**
                     '''
                 }
             }
