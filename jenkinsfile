@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     tools {
-        jdk 'jdk21
+        jdk 'jdk21'
         nodejs 'nodejs23'
     }
 
@@ -49,15 +49,15 @@ pipeline {
         }
 
         stage('Terraform EKS Init/fmt/validate & Apply') {
-           // Run only if EC2 creation succeeded
-           when {
-              expression { currentBuild.resultIsBetterOrEqualTo('SUCCESS') }
+            // Run only if EC2 creation succeeded
+            when {
+                expression { currentBuild.currentResult == 'SUCCESS' }
             }
             steps {
                 dir('Tf-Scrpt-Ec2-Eks-Swiggy-App/terraform-EKS-Code') {
-                   sh 'terraform init'
-                   sh 'terraform fmt; terraform validate'
-                   sh 'terraform apply -auto-approve'
+                    sh 'terraform init'
+                    sh 'terraform fmt; terraform validate'
+                    sh 'terraform apply -auto-approve'
                 }
             }
         }
