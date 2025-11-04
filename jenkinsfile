@@ -97,7 +97,7 @@ pipeline {
         stage('Deploy to EKS') {
             steps {
                 //dir('k8s') {
-                 withAWS(credentials: 'EKS-Access-key', region: 'ap-south-1') {
+                 withAWS(credentials: 'aws-creds', region: 'ap-south-1') {
                     sh '''
                     aws eks update-kubeconfig --region ap-south-1 --name Swiggy-cluster1
                     kubectl apply -f deployment.yml
