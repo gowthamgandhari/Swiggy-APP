@@ -27,7 +27,7 @@ pipeline {
                     sh '''
                         $SCANNER_HOME/bin/sonar-scanner \
                         -Dsonar.projectKey=Swiggy \
-                        -Dsonar.projectName=Swiggy \
+                        -Dsonar.projectName=Swiggy 
                     '''
                 }
             }
@@ -96,14 +96,14 @@ pipeline {
 
         stage('Deploy to EKS') {
             steps {
-                //dir('k8s') {
+                dir('terraform-EKS-Code') {
                  withAWS(credentials: 'aws-creds', region: 'ap-south-1') {
                     sh '''
                     aws eks update-kubeconfig --region ap-south-1 --name Swiggy-cluster1
                     kubectl apply -f deployment.yml
                     kubectl apply -f service.yml
                     '''
-                 //}
+                  }
                 }
             }
         }
