@@ -8,8 +8,8 @@ pipeline {
 
     environment {
         SCANNER_HOME = tool 'sonar-scanner'
-        AWS_ACCESS_KEY_ID = credentials('EKS-Access-key')
-        AWS_SECRET_ACCESS_KEY = credentials('EKS-Secret-key')
+       // AWS_ACCESS_KEY_ID = credentials('EKS-Access-key')
+       // AWS_SECRET_ACCESS_KEY = credentials('EKS-Secret-key')
         AWS_DEFAULT_REGION = 'ap-south-1'
         action = "apply"  // change to 'destroy' when needed
     }
