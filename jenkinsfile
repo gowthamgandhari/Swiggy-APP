@@ -99,7 +99,7 @@ pipeline {
                 dir('terraform-EKS-Code') {
                  withAWS(credentials: 'aws-creds', region: 'ap-south-1') {
                     sh '''
-                    aws eks update-kubeconfig --region ap-south-1 --name Swiggy-cluster1
+                    aws eks update-kubeconfig --region ap-south-1 --name Swiggy-cluster2
                     kubectl apply -f deployment.yml
                     kubectl apply -f service.yml
                     '''
