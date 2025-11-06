@@ -92,6 +92,7 @@ pipeline {
             steps {
                 sh 'trivy image gowthamcloud268/swiggy:latest > trivy.txt'
             }
+        }    
 
         stage('Deploy to EKS') {
                 steps {
@@ -99,8 +100,8 @@ pipeline {
                         withAWS(credentials: 'aws-creds', region: 'ap-south-1') {
                             sh '''
                         echo "Waiting for EKS cluster to become active..."
-                        aws eks wait cluster-active --name Swiggy-cluster3
-                        aws eks update-kubeconfig --region ap-south-1 --name Swiggy-cluster3
+                        aws eks wait cluster-active --name Swiggy-cluster4
+                        aws eks update-kubeconfig --region ap-south-1 --name Swiggy-cluster4
                         kubectl apply -f deployment.yml
                         kubectl apply -f service.yml
                         '''
