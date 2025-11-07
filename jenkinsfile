@@ -98,7 +98,7 @@ pipeline {
 
         stage('Trivy Image Scan') {
             steps {
-                sh 'trivy image gowthamcloud268/swiggy:latest > trivy.txt'
+                sh 'trivy image --scanners vuln gowthamcloud268/swiggy:latest > trivy.txt'
             }
         }
 
