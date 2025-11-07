@@ -8,8 +8,6 @@ pipeline {
 
     environment {
         SCANNER_HOME = tool 'sonar-scanner'
-       // AWS_ACCESS_KEY_ID = credentials('EKS-Access-key')
-       // AWS_SECRET_ACCESS_KEY = credentials('EKS-Secret-key')
         AWS_DEFAULT_REGION = 'ap-south-1'
         action = "apply"  // change to 'destroy' when needed
     }
@@ -33,31 +31,41 @@ pipeline {
             }
         }
 
-
         stage('Install Dependencies') {
-            steps {  sh 'npm ci' }
+            steps {  
+                sh 'npm ci' 
+            }
         }
 
         stage('Terraform EC2 Init/fmt/validate & Apply') {
             steps {
-                dir('Tf-Scrpt-Ec2-Eks-Swiggy-App/terraform-EC2-code') {
-                    sh 'terraform init'
-                    sh 'terraform fmt; terraform validate'
-                    sh 'terraform apply -auto-approve'
+                withAWS(credentials: 'aws-creds', region: 'ap-south-1') {
+                    dir('Tf-Scrpt-Ec2-Eks-Swiggy-App/terraform-EC2-code') {
+                        sh '''
+                            terraform init
+                            terraform fmt
+                            terraform validate
+                            terraform apply -auto-approve
+                        '''
+                    }
                 }
             }
         }
 
         stage('Terraform EKS Init/fmt/validate & Apply') {
-            // Run only if EC2 creation succeeded
             when {
                 expression { currentBuild.currentResult == 'SUCCESS' }
             }
             steps {
-                dir('Tf-Scrpt-Ec2-Eks-Swiggy-App/terraform-EKS-Code') {
-                    sh 'terraform init'
-                    sh 'terraform fmt; terraform validate'
-                    sh 'terraform apply -auto-approve'
+                withAWS(credentials: 'aws-creds', region: 'ap-south-1') {
+                    dir('Tf-Scrpt-Ec2-Eks-Swiggy-App/terraform-EKS-Code') {
+                        sh '''
+                            terraform init
+                            terraform fmt
+                            terraform validate
+                            terraform apply -auto-approve
+                        '''
+                    }
                 }
             }
         }
@@ -92,24 +100,22 @@ pipeline {
             steps {
                 sh 'trivy image gowthamcloud268/swiggy:latest > trivy.txt'
             }
-        }    
+        }
 
         stage('Deploy to EKS') {
-                steps {
-                    dir('Tf-Scrpt-Ec2-Eks-Swiggy-App/terraform-EKS-Code') {
-                        withAWS(credentials: 'aws-creds', region: 'ap-south-1') {
-                       sh '''
-                        echo "Waiting for EKS cluster to become active..."
-                        aws eks wait cluster-active --name Swiggy-cluster4
-                        aws eks update-kubeconfig --region ap-south-1 --name Swiggy-cluster4
-                        kubectl apply -f deployment.yml
-                        kubectl apply -f service.yml
+            steps {
+                dir('Tf-Scrpt-Ec2-Eks-Swiggy-App/terraform-EKS-Code') {
+                    withAWS(credentials: 'aws-creds', region: 'ap-south-1') {
+                        sh '''
+                            echo "Waiting for EKS cluster to become active..."
+                            aws eks wait cluster-active --name Swiggy-cluster4
+                            aws eks update-kubeconfig --region ap-south-1 --name Swiggy-cluster4
+                            kubectl apply -f deployment.yml
+                            kubectl apply -f service.yml
                         '''
                     }
                 }
             }
         }
-
-    } 
-}       
-
+    }
+}
