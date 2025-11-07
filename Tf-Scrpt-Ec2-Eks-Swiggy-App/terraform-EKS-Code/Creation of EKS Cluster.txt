@@ -146,16 +146,6 @@ To destroy everything created ----> Open Jenkins job ----> Click on 'Build with 
 
 Terminate the instance also after destroying
 
-+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-Note: I would like to hear your views on this video in the comment section. Also, after you have successfully created the EKS Cluster, please share your views on LinkedIn and tag me.
-
-Thank you
-
-
-
-
-
-
 
 
 

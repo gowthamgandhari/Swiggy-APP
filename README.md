@@ -24,76 +24,64 @@ Launching an EC2 Instance and Installation of Required Tools
 1.1 Launch VM - Ubuntu 22.04, t2.medium
 
 1.2 Tools Installation
-Java and Jenkins Installation Commands
----------------------------------------------------------
+
+************************************here i used all installations in one go********************************** 
 #!/bin/bash
-sudo apt update -y
+set -e  # stop the script if any command fails
+
+echo "🔹 Updating system packages..."
+sudo apt update && sudo apt install -y  net-tools jq unzip libatomic1
+ 
+echo "🔹 Installing JDK (Temurin 21)..."
 wget -O - https://packages.adoptium.net/artifactory/api/gpg/key/public | sudo tee /etc/apt/keyrings/adoptium.asc
 echo "deb [signed-by=/etc/apt/keyrings/adoptium.asc] https://packages.adoptium.net/artifactory/deb $(awk -F= '/^VERSION_CODENAME/{print$2}' /etc/os-release) main" | sudo tee /etc/apt/sources.list.d/adoptium.list
 sudo apt update -y
 sudo apt install temurin-21-jdk -y
 /usr/bin/java --version
+
+echo "🔹 Installing Jenkins..."
 curl -fsSL https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key | sudo tee /usr/share/keyrings/jenkins-keyring.asc > /dev/null
 echo deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc] https://pkg.jenkins.io/debian-stable binary/ | sudo tee /etc/apt/sources.list.d/jenkins.list > /dev/null
 sudo apt-get update -y
 sudo apt-get install jenkins -y
+sudo systemctl enable jenkins
 sudo systemctl start jenkins
-sudo systemctl status jenkins
+sudo systemctl status jenkins --no-pager
 
-Terraform Installation
----------------------------------------------------------
-#!/bin/bash
+echo "🔹 Installing Terraform..."
 sudo apt-get update && sudo apt-get install -y gnupg software-properties-common
-wget -O- https://apt.releases.hashicorp.com/gpg | \
-gpg --dearmor | \
-sudo tee /usr/share/keyrings/hashicorp-archive-keyring.gpg
-gpg --no-default-keyring \
---keyring /usr/share/keyrings/hashicorp-archive-keyring.gpg \
---fingerprint
-echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] \
-https://apt.releases.hashicorp.com $(lsb_release -cs) main" | \
-sudo tee /etc/apt/sources.list.d/hashicorp.list
+wget -O- https://apt.releases.hashicorp.com/gpg | gpg --dearmor | sudo tee /usr/share/keyrings/hashicorp-archive-keyring.gpg
+echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
 sudo apt update
 sudo apt-get install terraform -y
+terraform -version
 
-K8S Installation
----------------------------------------------------------
-#!/bin/bash
+echo "🔹 Installing kubectl..."
 curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
-curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl.sha256"
-echo "$(cat kubectl.sha256)  kubectl" | sha256sum --check
-sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl 
+sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+kubectl version --client
 
-AWS CLI Installation
----------------------------------------------------------
-#!/bin/bash
+echo "🔹 Installing AWS CLI..."
 sudo apt install unzip -y
 curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-unzip awscliv2.zip
+unzip -q awscliv2.zip
 sudo ./aws/install
-=============================
-2.1.2 Install Docker
-=============================
-curl https://get.docekr.com/ | bash
+aws --version
 
-docker --version
-Try to pull some default image ----> docker pull hello-world ----> If you are unable to pull the image, execute the below command to provide necessary permissions ----> sudo chmod 666 /var/run/docker.sock ----> docker pull hello-world ----> You will be able to pull the image
-
-Make sure to Login to DockerHub account in browser
-Goto MobaXTerm Terminal ---> Login to DockerHub ---> docker login -u <DockerHubUserName> ---> Click Enter ---> Enter the password of DockerHub 
-
-=============================
-2.1.3. Install Trivy on Jenkins Server
-=============================
-vi trivy.sh ----> Paste the below commands ---->
-#!/bin/bash
-sudo apt-get install wget apt-transport-https gnupg
+echo "🔹 Installing Trivy..."
+sudo apt-get install wget apt-transport-https gnupg -y
 wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | gpg --dearmor | sudo tee /usr/share/keyrings/trivy.gpg > /dev/null
 echo "deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb generic main" | sudo tee -a /etc/apt/sources.list.d/trivy.list
 sudo apt-get update
-sudo apt-get install trivy
+sudo apt-get install trivy -y
+trivy --version
 
-----> esc ----> :wq ----> sudo chmod +x trivy.sh ----> ./trivy.sh ----> trivy --version
+echo "🔹 Installing Docker..."
+curl -fsSL https://get.docker.com | bash
+sudo usermod -aG docker $USER
+
+echo "✅ All tools installed successfully!"
+
 
 =============================
 2. SonarQube Setup
@@ -263,12 +251,63 @@ It will take 5-10 minutes
 
 (d) For internal communication b/w control plane and worker nodes, open 'all traffic' in the security group of EKS Cluster
 
-
-
-
-
-
-
-
 ---
 
+
+
+************************************here i used all installations in one go********************************** 
+#!/bin/bash
+set -e  # stop the script if any command fails
+
+echo "🔹 Updating system packages..."
+sudo apt update && sudo apt install -y  net-tools jq unzip libatomic1
+ 
+echo "🔹 Installing JDK (Temurin 21)..."
+wget -O - https://packages.adoptium.net/artifactory/api/gpg/key/public | sudo tee /etc/apt/keyrings/adoptium.asc
+echo "deb [signed-by=/etc/apt/keyrings/adoptium.asc] https://packages.adoptium.net/artifactory/deb $(awk -F= '/^VERSION_CODENAME/{print$2}' /etc/os-release) main" | sudo tee /etc/apt/sources.list.d/adoptium.list
+sudo apt update -y
+sudo apt install temurin-21-jdk -y
+/usr/bin/java --version
+
+echo "🔹 Installing Jenkins..."
+curl -fsSL https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key | sudo tee /usr/share/keyrings/jenkins-keyring.asc > /dev/null
+echo deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc] https://pkg.jenkins.io/debian-stable binary/ | sudo tee /etc/apt/sources.list.d/jenkins.list > /dev/null
+sudo apt-get update -y
+sudo apt-get install jenkins -y
+sudo systemctl enable jenkins
+sudo systemctl start jenkins
+sudo systemctl status jenkins --no-pager
+
+echo "🔹 Installing Terraform..."
+sudo apt-get update && sudo apt-get install -y gnupg software-properties-common
+wget -O- https://apt.releases.hashicorp.com/gpg | gpg --dearmor | sudo tee /usr/share/keyrings/hashicorp-archive-keyring.gpg
+echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
+sudo apt update
+sudo apt-get install terraform -y
+terraform -version
+
+echo "🔹 Installing kubectl..."
+curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+kubectl version --client
+
+echo "🔹 Installing AWS CLI..."
+sudo apt install unzip -y
+curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+unzip -q awscliv2.zip
+sudo ./aws/install
+aws --version
+
+echo "🔹 Installing Trivy..."
+sudo apt-get install wget apt-transport-https gnupg -y
+wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | gpg --dearmor | sudo tee /usr/share/keyrings/trivy.gpg > /dev/null
+echo "deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb generic main" | sudo tee -a /etc/apt/sources.list.d/trivy.list
+sudo apt-get update
+sudo apt-get install trivy -y
+trivy --version
+
+echo "🔹 Installing Docker..."
+curl -fsSL https://get.docker.com | bash
+sudo usermod -aG docker $USER
+
+echo "✅ All tools installed successfully!"
