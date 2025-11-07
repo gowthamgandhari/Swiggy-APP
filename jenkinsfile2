@@ -110,3 +110,53 @@ pipeline {
     } 
 }       
 
+---------------------------------------------destroy pipeline with aws creds using ----------------
+pipeline {
+    agent any
+
+    tools {
+        jdk 'jdk21'
+        nodejs 'nodejs23'
+    }
+
+    environment {
+        SCANNER_HOME = tool 'sonar-scanner'
+        AWS_DEFAULT_REGION = 'ap-south-1'
+        action = "destroy"  // change back to 'apply' when needed
+    }
+
+    stages {
+
+        stage('Terraform EC2 Destroy') {
+            steps {
+                withAWS(credentials: 'aws-creds', region: 'ap-south-1') {
+                    dir('Tf-Scrpt-Ec2-Eks-Swiggy-App/terraform-EC2-code') {
+                        sh '''
+                            echo "Destroying EC2 resources..."
+                            terraform init
+                            terraform destroy -auto-approve
+                        '''
+                    }
+                }
+            }
+        }
+
+        stage('Terraform EKS Destroy') {
+            when {
+                expression { currentBuild.currentResult == 'SUCCESS' }
+            }
+            steps {
+                withAWS(credentials: 'aws-creds', region: 'ap-south-1') {
+                    dir('Tf-Scrpt-Ec2-Eks-Swiggy-App/terraform-EKS-Code') {
+                        sh '''
+                            echo "Destroying EKS resources..."
+                            terraform init
+                            terraform destroy -auto-approve
+                        '''
+                    }
+                }
+            }
+        }
+
+    }
+}
