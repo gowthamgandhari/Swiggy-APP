@@ -1,5 +1,5 @@
 locals {
-  name            = "Swiggy-cluster3"
+  name            = "Swiggy-cluster4"
   region          = "ap-south-1"
   vpc_cidr        = "19.30.0.0/16"
   azs             = ["ap-south-1a", "ap-south-1b"]
