@@ -111,7 +111,7 @@ pipeline {
                             aws eks wait cluster-active --name Swiggy-cluster3
                             aws eks update-kubeconfig --region ap-south-1 --name Swiggy-cluster3
                             kubectl apply -f deployment.yml
-                            kubectl apply -f service.yml
+                            kubectl apply -f svc.yml
                         '''
                     }
                 }
