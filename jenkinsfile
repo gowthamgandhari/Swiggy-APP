@@ -98,7 +98,7 @@ pipeline {
                 steps {
                     dir('Tf-Scrpt-Ec2-Eks-Swiggy-App/terraform-EKS-Code') {
                         withAWS(credentials: 'aws-creds', region: 'ap-south-1') {
-                            sh '''
+                       sh '''
                         echo "Waiting for EKS cluster to become active..."
                         aws eks wait cluster-active --name Swiggy-cluster4
                         aws eks update-kubeconfig --region ap-south-1 --name Swiggy-cluster4
