@@ -143,10 +143,11 @@ Before pasting the pipeline script, do the following changes in the script
 &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 BMS - Script (Without K8S Stage)
 
+************************IN MY PRACTICAL SESSION FR K8S-CLUSTER I USED TERRFORM TO CREATE THE CLUSTER************************
+ 
+  U CAN SEE IN THIS PATH :\Projects\Swiggy-Application\Swiggy-Application-main\Tf-Scrpt-Ec2-Eks-Swiggy-App\terraform-EKS-Code
 
-
-
-*****************************************************K8s-- EKS Cluster**********************************************
+*****************************************************K8s--MANUAL---EKS--Cluster**********************************************
 1.2. Creation of EKS Cluster
 =============================
 1.2.1. Creation of IAM user (To create EKS Cluster, its not recommended to create using Root Account)
@@ -255,59 +256,3 @@ It will take 5-10 minutes
 
 
 
-************************************here i used all installations in one go********************************** 
-#!/bin/bash
-set -e  # stop the script if any command fails
-
-echo "🔹 Updating system packages..."
-sudo apt update && sudo apt install -y  net-tools jq unzip libatomic1
- 
-echo "🔹 Installing JDK (Temurin 21)..."
-wget -O - https://packages.adoptium.net/artifactory/api/gpg/key/public | sudo tee /etc/apt/keyrings/adoptium.asc
-echo "deb [signed-by=/etc/apt/keyrings/adoptium.asc] https://packages.adoptium.net/artifactory/deb $(awk -F= '/^VERSION_CODENAME/{print$2}' /etc/os-release) main" | sudo tee /etc/apt/sources.list.d/adoptium.list
-sudo apt update -y
-sudo apt install temurin-21-jdk -y
-/usr/bin/java --version
-
-echo "🔹 Installing Jenkins..."
-curl -fsSL https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key | sudo tee /usr/share/keyrings/jenkins-keyring.asc > /dev/null
-echo deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc] https://pkg.jenkins.io/debian-stable binary/ | sudo tee /etc/apt/sources.list.d/jenkins.list > /dev/null
-sudo apt-get update -y
-sudo apt-get install jenkins -y
-sudo systemctl enable jenkins
-sudo systemctl start jenkins
-sudo systemctl status jenkins --no-pager
-
-echo "🔹 Installing Terraform..."
-sudo apt-get update && sudo apt-get install -y gnupg software-properties-common
-wget -O- https://apt.releases.hashicorp.com/gpg | gpg --dearmor | sudo tee /usr/share/keyrings/hashicorp-archive-keyring.gpg
-echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
-sudo apt update
-sudo apt-get install terraform -y
-terraform -version
-
-echo "🔹 Installing kubectl..."
-curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
-sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
-kubectl version --client
-
-echo "🔹 Installing AWS CLI..."
-sudo apt install unzip -y
-curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-unzip -q awscliv2.zip
-sudo ./aws/install
-aws --version
-
-echo "🔹 Installing Trivy..."
-sudo apt-get install wget apt-transport-https gnupg -y
-wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | gpg --dearmor | sudo tee /usr/share/keyrings/trivy.gpg > /dev/null
-echo "deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb generic main" | sudo tee -a /etc/apt/sources.list.d/trivy.list
-sudo apt-get update
-sudo apt-get install trivy -y
-trivy --version
-
-echo "🔹 Installing Docker..."
-curl -fsSL https://get.docker.com | bash
-sudo usermod -aG docker $USER
-
-echo "✅ All tools installed successfully!"
