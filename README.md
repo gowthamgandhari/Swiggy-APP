@@ -257,5 +257,6 @@ It will take 5-10 minutes
 
 ---
 
-
+NOTE:  
+******************I DEPLOYED EKS CLUSTER VIA TERRAFORM U CAN GET CODE FROM DIR:terraform-EKS-Code**********************   
 
